@@ -1,0 +1,35 @@
+{
+  "module": "hand_palm",
+  "version": 1,
+  "sections": {
+    "palmistry": {
+      "evidence_level": "unsupported_diagnostic_claim",
+      "medical_status": "do_not_diagnose_disease_from_palm_lines",
+      "allowed_output_fa": "فقط توصیف خطوط/شکل به‌عنوان سنت یا سرگرمی؛ بدون نسبت دادن بیماری یا عضو بیمار."
+    },
+    "visible_medical_signs": {
+      "evidence_level": "screening_observation_only",
+      "note_fa": "ویژگی‌های واقعی دست/ناخن می‌توانند سرنخ بالینی باشند اما برای تشخیص نیاز به شرح حال، معاینه و آزمایش دارند.",
+      "features": [
+        "تغییر رنگ شدید/سیانوز",
+        "تورم واضح",
+        "زخم یا عفونت",
+        "کلابینگ ناخن",
+        "قرمزی کف دست",
+        "لرزش واضح",
+        "تغییر شکل مفصل",
+        "ضایعات پوستی"
+      ],
+      "action": "show_possible_differentials_and_recommend_medical_evaluation; never diagnose_from_photo_alone"
+    }
+  },
+  "capture_guide": {
+    "instructions_fa": [
+      "کف دست و پشت دست هر دو، با نور سفید یکنواخت.",
+      "انگشت‌ها باز و دست بدون فشار روی سطح.",
+      "یک عکس نزدیک از ناخن‌ها در صورت مشاهدهٔ تغییر.",
+      "بدون فیلتر رنگی."
+    ]
+  },
+  "mandatory_footer": "این نتیجه فقط یک احتمال و تفسیر غیرتشخیصی است و جایگزین آزمایش پزشکی، معاینه پزشک یا تشخیص تخصصی نیست."
+}
