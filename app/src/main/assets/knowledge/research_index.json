@@ -1,0 +1,10 @@
+{
+  "version":1,
+  "updated":"2026-10-05",
+  "modules":{
+    "iridology":{"traditional_dataset":"iridology_traditional_map.json","evidence":"unsupported_as_systemic_diagnostic_test"},
+    "tongue":{"dataset":"tongue_extended.json","evidence":"active_research_field_with_validation_limits"},
+    "palm_hand":{"dataset":"palm_hand_extended.json","evidence":"separate_traditional_palmistry_from_clinical_hand_signs"}
+  },
+  "app_rule":"Every rendered interpretation must expose tradition, evidence_level, source and medical_status fields."
+}
