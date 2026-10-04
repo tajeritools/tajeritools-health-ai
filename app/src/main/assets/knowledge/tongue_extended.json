@@ -1,0 +1,38 @@
+{
+  "module":"tongue_extended",
+  "version":2,
+  "capture":{
+    "lighting":"neutral white",
+    "camera":"front-facing to tongue",
+    "no_filter":true,
+    "fields":["dorsal","ventral"],
+    "features":["body_color","coating_color","coating_thickness","coating_texture","shape","swelling","teeth_marks","cracks","red_points","moisture","sublingual_veins","visible_lesions"]
+  },
+  "traditional_tcm_patterns":[
+    {"pattern":"heat","common_features":["red/deep-red body","yellow coating","dryness"],"status":"traditional_pattern"},
+    {"pattern":"cold","common_features":["pale body","white coating","moist appearance"],"status":"traditional_pattern"},
+    {"pattern":"dampness","common_features":["swollen body","teeth marks","greasy coating"],"status":"traditional_pattern"},
+    {"pattern":"phlegm","common_features":["thick greasy coating"],"status":"traditional_pattern"},
+    {"pattern":"yin_deficiency","common_features":["red body","little/absent coating","cracks"],"status":"traditional_pattern"},
+    {"pattern":"qi_deficiency","common_features":["pale/swollen body","teeth marks"],"status":"traditional_pattern"},
+    {"pattern":"blood_stasis","common_features":["purple hue","dark/prominent sublingual veins"],"status":"traditional_pattern"}
+  ],
+  "medical_visual_findings":[
+    {"feature":"persistent ulcer or mass","action":"clinical_or_dental_evaluation","status":"medical_red_flag"},
+    {"feature":"non-scrapable white patch","action":"clinical_or_dental_evaluation","status":"medical_red_flag"},
+    {"feature":"unexplained red patch","action":"clinical_or_dental_evaluation","status":"medical_red_flag"},
+    {"feature":"marked asymmetry or restricted movement","action":"clinical_evaluation","status":"medical_red_flag"}
+  ],
+  "research_notes":[
+    "Computerized tongue image analysis is an active research field using segmentation, color calibration, feature extraction and classification.",
+    "Reviews identify dataset standardization, external validation and reproducibility as major limitations.",
+    "Practitioner agreement for complex traditional tongue classifications has often been low to moderate."
+  ],
+  "sources":[
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/41267018/","title":"Computerized tongue image analysis for non-invasive disease screening: a review"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/37559828/","title":"A survey of artificial intelligence in tongue image for disease diagnosis and syndrome differentiation"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/42743664/","title":"Systematic review of deep learning for intelligent tongue diagnosis"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/18564955/","title":"TCM tongue inspection reliability study"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/19420955/","title":"Reliability of morphological characteristics in traditional Chinese tongue diagnostics"}
+  ]
+}
