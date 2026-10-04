@@ -3,6 +3,7 @@ package ir.tajeritools.healthai
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Base64
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -17,7 +18,11 @@ data class AiConfig(
     val mistralKey: String,
     val mistralModel: String,
     val gatewayUrl: String,
-    val gatewayToken: String
+    val gatewayToken: String,
+    val medgemmaUrl: String = "",
+    val medgemmaToken: String = "",
+    val medgemmaModel: String = "google/medgemma-4b-it",
+    val provider: String = "auto"
 )
 
 object AiClient {
@@ -31,7 +36,11 @@ object AiClient {
             mistralKey = p.getString("mistral_key", "") ?: "",
             mistralModel = p.getString("mistral_model", "mistral-small-latest") ?: "mistral-small-latest",
             gatewayUrl = p.getString("gateway_url", "") ?: "",
-            gatewayToken = p.getString("gateway_token", "") ?: ""
+            gatewayToken = p.getString("gateway_token", "") ?: "",
+            medgemmaUrl = p.getString("medgemma_url", "") ?: "",
+            medgemmaToken = p.getString("medgemma_token", "") ?: "",
+            medgemmaModel = p.getString("medgemma_model", "google/medgemma-4b-it") ?: "google/medgemma-4b-it",
+            provider = p.getString("provider", "auto") ?: "auto"
         )
     }
 
@@ -43,51 +52,59 @@ object AiClient {
             .putString("mistral_model", cfg.mistralModel)
             .putString("gateway_url", cfg.gatewayUrl)
             .putString("gateway_token", cfg.gatewayToken)
+            .putString("medgemma_url", cfg.medgemmaUrl)
+            .putString("medgemma_token", cfg.medgemmaToken)
+            .putString("medgemma_model", cfg.medgemmaModel)
+            .putString("provider", cfg.provider)
             .apply()
     }
 
-    suspend fun analyzeText(context: Context, prompt: String): String {
-        val cfg = loadConfig(context)
-        val errors = mutableListOf<String>()
-
-        if (cfg.geminiKey.isNotBlank()) {
-            try { return callGemini(cfg, medicalPrompt(prompt), null) }
-            catch (e: Exception) { errors += "Gemini: ${e.message}" }
-        }
-        if (cfg.gatewayUrl.isNotBlank()) {
-            try { return callGateway(cfg, medicalPrompt(prompt), null) }
-            catch (e: Exception) { errors += "MedGemma/Gateway: ${e.message}" }
-        }
-        if (cfg.mistralKey.isNotBlank()) {
-            try { return callMistral(cfg, medicalPrompt(prompt)) }
-            catch (e: Exception) { errors += "Mistral: ${e.message}" }
-        }
-        if (errors.isNotEmpty()) error(errors.joinToString("\n"))
-        error("هیچ کلید یا Gateway هوش مصنوعی تنظیم نشده است.")
+    fun isConfigured(cfg: AiConfig): Boolean = when (cfg.provider) {
+        "mistral" -> cfg.mistralKey.isNotBlank()
+        "medgemma" -> cfg.medgemmaUrl.isNotBlank()
+        else -> cfg.geminiKey.isNotBlank() || cfg.gatewayUrl.isNotBlank() ||
+            cfg.mistralKey.isNotBlank() || cfg.medgemmaUrl.isNotBlank()
     }
 
-    suspend fun analyzeImage(context: Context, prompt: String, bitmap: Bitmap): String {
-        val cfg = loadConfig(context)
-        val jpeg = bitmapToBase64(bitmap)
-        val errors = mutableListOf<String>()
+    suspend fun analyzeText(context: Context, prompt: String): String =
+        analyze(loadConfig(context), medicalPrompt(prompt), null)
 
-        if (cfg.geminiKey.isNotBlank()) {
-            try { return callGemini(cfg, medicalPrompt(prompt), jpeg) }
-            catch (e: Exception) { errors += "Gemini: ${e.message}" }
-        }
-        if (cfg.gatewayUrl.isNotBlank()) {
-            try { return callGateway(cfg, medicalPrompt(prompt), jpeg) }
-            catch (e: Exception) { errors += "MedGemma/Gateway: ${e.message}" }
-        }
-        if (cfg.mistralKey.isNotBlank()) {
-            val ocr = try { OcrEngine.extractFromBitmap(bitmap) } catch (_: Exception) { "" }
-            if (ocr.isNotBlank()) {
-                try { return callMistral(cfg, medicalPrompt(prompt + "\n\nمتن استخراج‌شده از تصویر:\n" + ocr)) }
-                catch (e: Exception) { errors += "Mistral: ${e.message}" }
+    suspend fun analyzeImage(context: Context, prompt: String, bitmap: Bitmap): String =
+        analyze(loadConfig(context), medicalPrompt(prompt), withContext(Dispatchers.Default) {
+            bitmapToBase64(bitmap)
+        })
+
+    suspend fun testConnection(cfg: AiConfig, provider: String): String =
+        analyze(cfg.copy(provider = provider), "Reply with OK only.", null)
+
+    private suspend fun analyze(cfg: AiConfig, prompt: String, image: String?): String {
+        val providers = if (cfg.provider == "auto") listOf("gemini", "medgemma", "gateway", "mistral")
+            else listOf(cfg.provider)
+        val errors = mutableListOf<String>()
+        for (provider in providers) {
+            val configured = when (provider) {
+                "gemini" -> cfg.geminiKey.isNotBlank()
+                "medgemma" -> cfg.medgemmaUrl.isNotBlank()
+                "gateway" -> cfg.gatewayUrl.isNotBlank()
+                "mistral" -> cfg.mistralKey.isNotBlank()
+                else -> false
+            }
+            if (!configured) continue
+            try {
+                val response = when (provider) {
+                    "gemini" -> callGemini(cfg, prompt, image)
+                    "gateway" -> callGateway(cfg, prompt, image)
+                    "medgemma" -> callChat(cfg.medgemmaUrl, cfg.medgemmaToken, cfg.medgemmaModel, prompt, image)
+                    else -> callChat("https://api.mistral.ai/v1/chat/completions", cfg.mistralKey, cfg.mistralModel, prompt, image)
+                }
+                return "[$provider]\n$response"
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                errors += "$provider: ${e.message}"
             }
         }
-        if (errors.isNotEmpty()) error(errors.joinToString("\n"))
-        error("برای تحلیل تصویر، Gemini رایگان یا MedGemma/Gateway را تنظیم کن.")
+        error(errors.joinToString("\n").ifBlank { "تنظیمات سرویس انتخاب‌شده کامل نیست." })
     }
 
     private fun medicalPrompt(userPrompt: String): String = """
@@ -128,25 +145,27 @@ $userPrompt
                 ?: error("پاسخ قابل استفاده از Gemini دریافت نشد.")
         }
 
-    private suspend fun callMistral(cfg: AiConfig, prompt: String): String =
-        withContext(Dispatchers.IO) {
-            val body = JSONObject()
-                .put("model", cfg.mistralModel)
-                .put("messages", JSONArray().put(JSONObject()
-                    .put("role", "user")
-                    .put("content", prompt)))
-            val response = postJson(
-                URL("https://api.mistral.ai/v1/chat/completions"),
-                body.toString(),
-                mapOf("Authorization" to "Bearer ${cfg.mistralKey}")
-            )
-            JSONObject(response).optJSONArray("choices")
-                ?.optJSONObject(0)
-                ?.optJSONObject("message")
-                ?.optString("content")
-                ?.takeIf { it.isNotBlank() }
-                ?: error("پاسخ قابل استفاده از Mistral دریافت نشد.")
+    private suspend fun callChat(endpoint: String, token: String, model: String,
+                                 prompt: String, image: String?): String = withContext(Dispatchers.IO) {
+        val content: Any = if (image == null) prompt else JSONArray()
+            .put(JSONObject().put("type", "text").put("text", prompt))
+            .put(JSONObject().put("type", "image_url").put("image_url",
+                JSONObject().put("url", "data:image/jpeg;base64,$image")))
+        val body = JSONObject().put("model", model).put("max_tokens", 2048)
+            .put("stream", false)
+            .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", content)))
+        val headers = if (token.isBlank()) emptyMap() else mapOf("Authorization" to "Bearer $token")
+        val response = JSONObject(postJson(URL(endpoint), body.toString(), headers))
+        val value = response.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.opt("content")
+        val text = when (value) {
+            is String -> value
+            is JSONArray -> (0 until value.length()).mapNotNull {
+                value.optJSONObject(it)?.optString("text")?.takeIf { it.isNotBlank() }
+            }.joinToString("\n")
+            else -> ""
         }
+        text.takeIf { it.isNotBlank() } ?: error("پاسخ قابل استفاده دریافت نشد.")
+    }
 
     private suspend fun callGateway(cfg: AiConfig, prompt: String, imageBase64: String?): String =
         withContext(Dispatchers.IO) {
@@ -170,7 +189,9 @@ $userPrompt
     }
 
     private fun postJson(url: URL, body: String, headers: Map<String, String>): String {
+        require(url.protocol == "https" && url.host.isNotBlank() && url.userInfo == null) { "آدرس سرویس باید HTTPS و بدون اطلاعات ورود باشد." }
         val con = (url.openConnection() as HttpURLConnection).apply {
+            instanceFollowRedirects = false
             requestMethod = "POST"
             connectTimeout = 30000
             readTimeout = 60000
@@ -178,11 +199,13 @@ $userPrompt
             setRequestProperty("Content-Type", "application/json; charset=utf-8")
             headers.forEach { (k, v) -> setRequestProperty(k, v) }
         }
+        try {
         con.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
         val code = con.responseCode
         val stream = if (code in 200..299) con.inputStream else con.errorStream
         val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
-        if (code !in 200..299) error("HTTP $code: ${text.take(500)}")
+        if (code !in 200..299) error("HTTP $code: درخواست ناموفق بود؛ کلید، آدرس، مدل و سهمیه را بررسی کن.")
         return text
+        } finally { con.disconnect() }
     }
 }

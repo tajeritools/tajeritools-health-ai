@@ -395,7 +395,7 @@ class MainActivity : AppCompatActivity() {
 
                 val local = AnalysisEngine.localLabSummary(lastText)
                 val cfg = AiClient.loadConfig(this@MainActivity)
-                val hasAi = cfg.gatewayUrl.isNotBlank() || cfg.geminiKey.isNotBlank() || cfg.mistralKey.isNotBlank()
+                val hasAi = AiClient.isConfigured(cfg)
                 val finalText = if (!hasAi) {
                     status.text = "تحلیل محلی تمام شد."
                     local
@@ -465,7 +465,7 @@ class MainActivity : AppCompatActivity() {
                 ProfileStore.saveResult(this, active.id, "traditional_result", local)
                 status.text = "پرسشنامه تکمیل شد."
                 val cfg = AiClient.loadConfig(this)
-                val hasAi = cfg.gatewayUrl.isNotBlank() || cfg.geminiKey.isNotBlank() || cfg.mistralKey.isNotBlank()
+                val hasAi = AiClient.isConfigured(cfg)
                 if (hasAi) {
                     lifecycleScope.launch {
                         try {
@@ -521,24 +521,56 @@ class MainActivity : AppCompatActivity() {
         val geminiModel = field("Gemini model", old.geminiModel)
         val mistral = field("Mistral API Key", old.mistralKey, true)
         val mistralModel = field("Mistral model", old.mistralModel)
-        val gateway = field("MedGemma / Gateway URL (اختیاری)", old.gatewayUrl)
+        val gateway = field("Legacy Gateway URL (اختیاری)", old.gatewayUrl)
         val token = field("Gateway token (اختیاری)", old.gatewayToken, true)
 
+        val medUrl = field("MedGemma HTTPS URL کامل /v1/chat/completions", old.medgemmaUrl)
+        val medToken = field("MedGemma endpoint token", old.medgemmaToken, true)
+        val medModel = field("MedGemma served model", old.medgemmaModel)
+        val providers = listOf("auto", "mistral", "medgemma")
+        val selector = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                listOf("خودکار: Gemini، MedGemma، Gateway، Mistral", "فقط Mistral", "فقط MedGemma"))
+            setSelection(providers.indexOf(old.provider).coerceAtLeast(0))
+        }
+        box.addView(selector, full())
+        fun config() = AiConfig(
+            gemini.text.toString().trim(),
+            geminiModel.text.toString().trim().ifBlank { old.geminiModel },
+            mistral.text.toString().trim(),
+            mistralModel.text.toString().trim().ifBlank { "mistral-small-latest" },
+            gateway.text.toString().trim(), token.text.toString().trim(),
+            medUrl.text.toString().trim(), medToken.text.toString().trim(),
+            medModel.text.toString().trim().ifBlank { "google/medgemma-4b-it" },
+            providers[selector.selectedItemPosition]
+        )
+        val testStatus = TextView(this)
+        listOf("mistral", "medgemma").forEach { provider ->
+            box.addView(Button(this).apply {
+                text = "آزمایش اتصال $provider"
+                setOnClickListener {
+                    val cfg = config()
+                    isEnabled = false
+                    testStatus.text = "در حال آزمایش $provider..."
+                    lifecycleScope.launch {
+                        try {
+                            testStatus.text = "اتصال برقرار شد: " + AiClient.testConnection(cfg, provider)
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            testStatus.text = e.message ?: "خطای اتصال"
+                        } finally { isEnabled = true }
+                    }
+                }
+            }, full())
+        }
+        box.addView(testStatus, full())
         AlertDialog.Builder(this)
             .setTitle("تنظیم چند AI")
             .setView(ScrollView(this).apply { addView(box) })
             .setPositiveButton("ذخیره") { _, _ ->
-                AiClient.saveConfig(
-                    this,
-                    AiConfig(
-                        gemini.text.toString().trim(),
-                        geminiModel.text.toString().trim().ifBlank { "gemini-3.7-flash" },
-                        mistral.text.toString().trim(),
-                        mistralModel.text.toString().trim().ifBlank { "mistral-small-latest" },
-                        gateway.text.toString().trim(),
-                        token.text.toString().trim()
-                    )
-                )
+                AiClient.saveConfig(this, config())
                 toast("تنظیمات AI ذخیره شد.")
             }
             .setNegativeButton("لغو", null)
