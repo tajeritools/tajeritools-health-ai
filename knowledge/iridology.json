@@ -1,0 +1,99 @@
+{
+  "module": "iridology",
+  "version": 1,
+  "medical_status": "unsupported_for_systemic_diagnosis",
+  "evidence_level": "unsupported_diagnostic_claim",
+  "scientific_summary": [
+    "Controlled and systematic evaluations have not validated iridology as a diagnostic or screening method for systemic disease.",
+    "Published historical reviews note poor agreement among iridology charts and sources of image variability such as pupil size, magnification and oblique lighting."
+  ],
+  "allowed_image_features": [
+    {
+      "id": "iris_color",
+      "label_fa": "رنگ کلی عنبیه",
+      "use": "descriptive_only"
+    },
+    {
+      "id": "pigment_spots",
+      "label_fa": "لکه‌های رنگدانه‌ای",
+      "use": "descriptive_only"
+    },
+    {
+      "id": "crypts",
+      "label_fa": "کریپت‌ها/فرورفتگی‌های سطحی",
+      "use": "descriptive_only"
+    },
+    {
+      "id": "contraction_furrows",
+      "label_fa": "شیارهای انقباضی",
+      "use": "descriptive_only"
+    },
+    {
+      "id": "collarette",
+      "label_fa": "ناحیه collarette",
+      "use": "descriptive_only"
+    },
+    {
+      "id": "pupil_shape",
+      "label_fa": "شکل مردمک",
+      "use": "medical_referral_if_abnormal"
+    },
+    {
+      "id": "visible_lesion_or_asymmetry",
+      "label_fa": "ضایعه یا عدم تقارن واضح",
+      "use": "medical_referral"
+    }
+  ],
+  "traditional_claim_catalog": {
+    "note_fa": "در مکاتب iridology، عنبیه به نواحی ساعت‌مانند و حلقه‌های متحدالمرکز تقسیم می‌شود و هر ناحیه به اندام‌ها/سامانه‌های بدن نسبت داده می‌شود؛ اما بین نقشه‌ها توافق استاندارد وجود ندارد و این ارتباط‌ها اعتبار تشخیصی اثبات‌شده ندارند.",
+    "body_systems": [
+      "گوارش",
+      "کبد و صفرا",
+      "کلیه و مجاری ادراری",
+      "قلب و عروق",
+      "تنفس",
+      "غدد درون‌ریز",
+      "عصبی",
+      "تولیدمثل",
+      "عضلانی‌اسکلتی",
+      "پوست/لنف"
+    ],
+    "disease_output_policy": "never_generate_specific_disease_from_iris_map"
+  },
+  "capture_guide": {
+    "instructions_fa": [
+      "نور یکنواخت و بدون بازتاب شدید روی قرنیه.",
+      "دوربین کاملاً روبه‌روی چشم و بدون زاویه.",
+      "فوکوس روی عنبیه؛ پلک‌ها عنبیه را نپوشانند.",
+      "از فیلتر زیبایی، تغییر رنگ و نورپردازی رنگی استفاده نشود.",
+      "برای هر چشم یک تصویر جدا و واضح ثبت شود."
+    ],
+    "reject_if": [
+      "blur",
+      "heavy_glare",
+      "color_filter",
+      "extreme_angle",
+      "iris_occluded"
+    ]
+  },
+  "output_template_fa": {
+    "observed_features": "ویژگی‌های مشاهده‌شده",
+    "traditional_interpretation": "تفسیر سنتی/تاریخی (فاقد اعتبار تشخیصی پزشکی)",
+    "medical_note": "اگر ضایعه، تغییر مردمک، درد، کاهش دید یا تغییر جدید دیده شود، ارزیابی چشم‌پزشکی لازم است.",
+    "mandatory_footer": "این نتیجه فقط یک احتمال و تفسیر غیرتشخیصی است و جایگزین آزمایش پزشکی، معاینه پزشک یا تشخیص تخصصی نیست."
+  },
+  "sources": [
+    {
+      "title": "Iridology: A systematic review",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/10213874/"
+    },
+    {
+      "title": "Iridology: biological plausibility, clinical evidence, and implications for ophthalmic practice",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/42347992/"
+    },
+    {
+      "title": "Analysis of iris: history and future",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/14765528/"
+    }
+  ]
+}
