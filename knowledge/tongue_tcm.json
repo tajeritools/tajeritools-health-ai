@@ -1,0 +1,185 @@
+{
+  "module": "tongue",
+  "version": 1,
+  "framework": "Traditional Chinese Medicine (TCM) feature description",
+  "evidence_level": "traditional_pattern",
+  "medical_status": "not_a_standalone_medical_diagnostic_test",
+  "image_features": [
+    {
+      "id": "body_color",
+      "values": [
+        "pale",
+        "pink",
+        "red",
+        "deep_red",
+        "purple"
+      ],
+      "traditional_use": "الگوی رنگ بدن زبان"
+    },
+    {
+      "id": "shape",
+      "values": [
+        "normal",
+        "swollen",
+        "thin",
+        "deviated",
+        "flaccid"
+      ],
+      "traditional_use": "شکل/تونوس"
+    },
+    {
+      "id": "coating_color",
+      "values": [
+        "none",
+        "white",
+        "yellow",
+        "gray",
+        "black"
+      ],
+      "traditional_use": "رنگ پوشش"
+    },
+    {
+      "id": "coating_thickness",
+      "values": [
+        "none",
+        "thin",
+        "thick"
+      ],
+      "traditional_use": "ضخامت پوشش"
+    },
+    {
+      "id": "coating_texture",
+      "values": [
+        "dry",
+        "moist",
+        "greasy",
+        "curdy"
+      ],
+      "traditional_use": "بافت پوشش"
+    },
+    {
+      "id": "cracks",
+      "values": [
+        "none",
+        "central",
+        "multiple",
+        "localized"
+      ],
+      "traditional_use": "ترک‌ها"
+    },
+    {
+      "id": "teeth_marks",
+      "values": [
+        "absent",
+        "present"
+      ],
+      "traditional_use": "آثار دندان"
+    },
+    {
+      "id": "moisture",
+      "values": [
+        "dry",
+        "normal",
+        "wet"
+      ],
+      "traditional_use": "رطوبت"
+    },
+    {
+      "id": "red_dots",
+      "values": [
+        "absent",
+        "present"
+      ],
+      "traditional_use": "نقاط قرمز"
+    },
+    {
+      "id": "sublingual_veins",
+      "values": [
+        "normal",
+        "prominent",
+        "dark_purple"
+      ],
+      "traditional_use": "وریدهای زیرزبانی"
+    }
+  ],
+  "traditional_patterns": [
+    {
+      "pattern": "heat",
+      "label_fa": "الگوی گرمی/Heat",
+      "example_features": [
+        "red_or_deep_red",
+        "yellow_coating"
+      ],
+      "medical_status": "traditional_pattern_only"
+    },
+    {
+      "pattern": "cold",
+      "label_fa": "الگوی سردی/Cold",
+      "example_features": [
+        "pale",
+        "white_coating"
+      ],
+      "medical_status": "traditional_pattern_only"
+    },
+    {
+      "pattern": "dampness",
+      "label_fa": "الگوی رطوبت/Dampness",
+      "example_features": [
+        "swollen",
+        "greasy_coating",
+        "teeth_marks"
+      ],
+      "medical_status": "traditional_pattern_only"
+    },
+    {
+      "pattern": "dryness",
+      "label_fa": "الگوی خشکی/Dryness",
+      "example_features": [
+        "dry_surface",
+        "thin_or_absent_coating"
+      ],
+      "medical_status": "traditional_pattern_only"
+    },
+    {
+      "pattern": "blood_stasis",
+      "label_fa": "الگوی Blood Stasis",
+      "example_features": [
+        "purple_tone",
+        "dark_sublingual_veins"
+      ],
+      "medical_status": "traditional_pattern_only"
+    }
+  ],
+  "evidence_notes": [
+    "AI research exists for tongue-image segmentation and classification, but dataset quality and reliability remain important limitations.",
+    "Studies of practitioner agreement have reported substantial variability; complex tongue classifications show limited inter-rater reliability.",
+    "Disease-specific predictions must not be presented as clinically validated unless a specific validated dataset and prospective evidence support them."
+  ],
+  "capture_guide": {
+    "instructions_fa": [
+      "نور سفید و یکنواخت؛ بدون نور زرد/آبی.",
+      "زبان کاملاً بیرون ولی بدون فشار طولانی.",
+      "دوربین روبه‌رو، فاصله ثابت، بدون فیلتر زیبایی.",
+      "قبل از عکس از خوردن مواد رنگی، چای/قهوه غلیظ و مسواک زبان اجتناب شود اگر هدف مقایسهٔ استاندارد است."
+    ]
+  },
+  "mandatory_footer": "این نتیجه فقط یک احتمال و تفسیر غیرتشخیصی است و جایگزین آزمایش پزشکی، معاینه پزشک یا تشخیص تخصصی نیست.",
+  "sources": [
+    {
+      "title": "AI in tongue image for disease diagnosis and syndrome differentiation",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10408356/"
+    },
+    {
+      "title": "Reliability of morphological characteristics in traditional Chinese tongue diagnostics",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19420955/"
+    },
+    {
+      "title": "TCM tongue inspection inter/intrapractitioner reliability",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/18564955/"
+    },
+    {
+      "title": "NCCIH Traditional Chinese Medicine",
+      "url": "https://www.nccih.nih.gov/health/traditional-chinese-medicine-what-you-need-to-know"
+    }
+  ]
+}
