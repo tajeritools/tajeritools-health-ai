@@ -1,0 +1,41 @@
+{
+  "module":"palm_hand_extended",
+  "version":2,
+  "traditional_palmistry":{
+    "status":"traditional_or_folklore_not_medical_diagnosis",
+    "lines":[
+      {"name":"life_line","fa":"خط زندگی","traditional_topics":["vitality","major life changes"]},
+      {"name":"head_line","fa":"خط سر","traditional_topics":["thinking style","decision making"]},
+      {"name":"heart_line","fa":"خط قلب","traditional_topics":["emotion","relationships"]},
+      {"name":"fate_line","fa":"خط سرنوشت","traditional_topics":["career/life direction"]},
+      {"name":"sun_line","fa":"خط خورشید","traditional_topics":["recognition/creativity"]},
+      {"name":"mercury_line","fa":"خط عطارد","traditional_topics":["communication/business in palmistry traditions"]}
+    ],
+    "mounts":[
+      "Jupiter","Saturn","Apollo/Sun","Mercury","Venus","Moon/Luna","Upper Mars","Lower Mars"
+    ],
+    "shapes":["earth","air","fire","water"],
+    "medical_use":"none"
+  },
+  "medical_hand_observations":[
+    {"feature":"digital_clubbing","fa":"کلابینگ انگشت/ناخن","meaning":"clinical sign associated with multiple cardiopulmonary, gastrointestinal and other conditions","action":"medical_evaluation"},
+    {"feature":"palmar_erythema","fa":"قرمزی کف دست","meaning":"nonspecific clinical sign with multiple possible causes","action":"contextual_medical_evaluation"},
+    {"feature":"cyanosis","fa":"کبودشدگی/سیانوز","meaning":"possible impaired oxygenation or circulation","action":"urgent_context_dependent_evaluation"},
+    {"feature":"dupuytren_contracture","fa":"انقباض دوپویترن","meaning":"fibroproliferative palmar fascia disorder","action":"clinical_evaluation"},
+    {"feature":"single_transverse_palmar_crease","fa":"چین عرضی منفرد کف دست","meaning":"developmental variant; may occur in healthy people and can be associated with some congenital conditions","action":"not_diagnostic_alone"},
+    {"feature":"aquagenic_wrinkling","fa":"چروکیدگی شدید کف دست با آب","meaning":"dermatologic finding with reported associations","action":"clinical_evaluation_if_symptomatic"}
+  ],
+  "capture_standard":{
+    "views":["left_palm","right_palm","left_dorsum","right_dorsum","nails_closeup_optional"],
+    "white_light":true,
+    "no_filter":true,
+    "hands_relaxed":true
+  },
+  "sources":[
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/1786353/","title":"Palmar, plantar, and digital flexion creases: morphologic and clinical considerations"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/31301248/","title":"The simian crease: Relationship to various genetic disorders"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/11466101/","title":"Does this patient have clubbing?"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/21060335/","title":"Scientific understanding and clinical management of Dupuytren disease"},
+    {"url":"https://pubmed.ncbi.nlm.nih.gov/35796149/","title":"Aquagenic wrinkling of the palms: review of the literature"}
+  ]
+}
