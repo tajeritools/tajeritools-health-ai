@@ -21,11 +21,13 @@ data class AiConfig(
 )
 
 object AiClient {
+    private const val DEFAULT_GEMINI_MODEL = "gemini-3.7-flash"
+
     fun loadConfig(context: Context): AiConfig {
         val p = context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE)
         return AiConfig(
             geminiKey = p.getString("gemini_key", "") ?: "",
-            geminiModel = p.getString("gemini_model", "gemini-3.8-flash") ?: "gemini-3.8-flash",
+            geminiModel = p.getString("gemini_model", DEFAULT_GEMINI_MODEL) ?: DEFAULT_GEMINI_MODEL,
             mistralKey = p.getString("mistral_key", "") ?: "",
             mistralModel = p.getString("mistral_model", "mistral-small-latest") ?: "mistral-small-latest",
             gatewayUrl = p.getString("gateway_url", "") ?: "",
@@ -36,7 +38,7 @@ object AiClient {
     fun saveConfig(context: Context, cfg: AiConfig) {
         context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE).edit()
             .putString("gemini_key", cfg.geminiKey)
-            .putString("gemini_model", cfg.geminiModel)
+            .putString("gemini_model", cfg.geminiModel.ifBlank { DEFAULT_GEMINI_MODEL })
             .putString("mistral_key", cfg.mistralKey)
             .putString("mistral_model", cfg.mistralModel)
             .putString("gateway_url", cfg.gatewayUrl)
@@ -48,16 +50,16 @@ object AiClient {
         val cfg = loadConfig(context)
         val errors = mutableListOf<String>()
 
-        if (cfg.gatewayUrl.isNotBlank()) {
-            try { return callGateway(cfg, prompt, null) }
-            catch (e: Exception) { errors += "Gateway: ${e.message}" }
-        }
         if (cfg.geminiKey.isNotBlank()) {
-            try { return callGemini(cfg, prompt, null) }
+            try { return callGemini(cfg, medicalPrompt(prompt), null) }
             catch (e: Exception) { errors += "Gemini: ${e.message}" }
         }
+        if (cfg.gatewayUrl.isNotBlank()) {
+            try { return callGateway(cfg, medicalPrompt(prompt), null) }
+            catch (e: Exception) { errors += "MedGemma/Gateway: ${e.message}" }
+        }
         if (cfg.mistralKey.isNotBlank()) {
-            try { return callMistral(cfg, prompt) }
+            try { return callMistral(cfg, medicalPrompt(prompt)) }
             catch (e: Exception) { errors += "Mistral: ${e.message}" }
         }
         if (errors.isNotEmpty()) error(errors.joinToString("\n"))
@@ -69,24 +71,36 @@ object AiClient {
         val jpeg = bitmapToBase64(bitmap)
         val errors = mutableListOf<String>()
 
-        if (cfg.gatewayUrl.isNotBlank()) {
-            try { return callGateway(cfg, prompt, jpeg) }
-            catch (e: Exception) { errors += "Gateway: ${e.message}" }
-        }
         if (cfg.geminiKey.isNotBlank()) {
-            try { return callGemini(cfg, prompt, jpeg) }
+            try { return callGemini(cfg, medicalPrompt(prompt), jpeg) }
             catch (e: Exception) { errors += "Gemini: ${e.message}" }
+        }
+        if (cfg.gatewayUrl.isNotBlank()) {
+            try { return callGateway(cfg, medicalPrompt(prompt), jpeg) }
+            catch (e: Exception) { errors += "MedGemma/Gateway: ${e.message}" }
         }
         if (cfg.mistralKey.isNotBlank()) {
             val ocr = try { OcrEngine.extractFromBitmap(bitmap) } catch (_: Exception) { "" }
             if (ocr.isNotBlank()) {
-                try { return callMistral(cfg, prompt + "\n\nمتن استخراج‌شده از تصویر:\n" + ocr) }
+                try { return callMistral(cfg, medicalPrompt(prompt + "\n\nمتن استخراج‌شده از تصویر:\n" + ocr)) }
                 catch (e: Exception) { errors += "Mistral: ${e.message}" }
             }
         }
         if (errors.isNotEmpty()) error(errors.joinToString("\n"))
-        error("برای تحلیل تصویر، Gemini یا Gateway را تنظیم کن.")
+        error("برای تحلیل تصویر، Gemini رایگان یا MedGemma/Gateway را تنظیم کن.")
     }
+
+    private fun medicalPrompt(userPrompt: String): String = """
+تو یک دستیار هوش مصنوعی سلامت برای تحلیل آموزشی، پیشگیری، غربالگری و پشتیبانی تصمیم‌گیری هستی.
+- داده‌های ورودی را دقیق و ساختاریافته بررسی کن.
+- بین یافته قطعی، احتمال، ریسک و اطلاعات ناکافی تفاوت روشن بگذار.
+- برای علائم خطر، مراجعه فوری یا پیگیری پزشکی را مشخص کن.
+- درمان دارویی نسخه‌ای، تغییر دوز، یا قطع دارو را بدون ارزیابی پزشک توصیه نکن.
+- در بخش‌های سنتی، ادعاهای سنتی را از شواهد پزشکی جدا کن.
+- پاسخ را به فارسی واضح و قابل فهم بنویس.
+
+$userPrompt
+""".trimIndent()
 
     private suspend fun callGemini(cfg: AiConfig, prompt: String, imageBase64: String?): String =
         withContext(Dispatchers.IO) {
