@@ -521,7 +521,7 @@ class MainActivity : AppCompatActivity() {
         val geminiModel = field("Gemini model", old.geminiModel)
         val mistral = field("Mistral API Key", old.mistralKey, true)
         val mistralModel = field("Mistral model", old.mistralModel)
-        val gateway = field("Gateway URL (اختیاری)", old.gatewayUrl)
+        val gateway = field("MedGemma / Gateway URL (اختیاری)", old.gatewayUrl)
         val token = field("Gateway token (اختیاری)", old.gatewayToken, true)
 
         AlertDialog.Builder(this)
@@ -532,7 +532,7 @@ class MainActivity : AppCompatActivity() {
                     this,
                     AiConfig(
                         gemini.text.toString().trim(),
-                        geminiModel.text.toString().trim().ifBlank { "gemini-3.8-flash" },
+                        geminiModel.text.toString().trim().ifBlank { "gemini-3.7-flash" },
                         mistral.text.toString().trim(),
                         mistralModel.text.toString().trim().ifBlank { "mistral-small-latest" },
                         gateway.text.toString().trim(),
