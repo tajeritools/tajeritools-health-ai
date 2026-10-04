@@ -23,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private var section = AnalysisEngine.Section.LABS
@@ -31,15 +32,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var result: TextView
     private lateinit var preview: ImageView
+    private lateinit var activeProfileText: TextView
 
     private val cameraLauncher =
         registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
             if (bitmap != null) {
+                val profile = ProfileStore.active(this)
+                if (profile == null) {
+                    toast("اول یک پروفایل انتخاب کن.")
+                    return@registerForActivityResult
+                }
                 lastBitmap = bitmap
                 lastText = ""
+                ProfileStore.saveBitmap(this, profile.id, bitmap, sectionPrefix() + "_photo")
                 preview.setImageBitmap(bitmap)
                 preview.visibility = View.VISIBLE
-                status.text = "عکس دریافت شد. حالا «تحلیل» را بزن."
+                status.text = "عکس در پروفایل «${profile.name}» ذخیره شد."
             }
         }
 
@@ -51,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(buildUi())
+        refreshProfileHeader()
     }
 
     private fun buildUi(): View {
@@ -69,12 +78,34 @@ class MainActivity : AppCompatActivity() {
             text = "تحلیل آزمایش + طب سنتی + تحلیل تصویری"
             textSize = 14f
             gravity = Gravity.CENTER
-            setPadding(0, 8, 0, 24)
+            setPadding(0, 8, 0, 18)
         }, full())
 
-        val sectionRow = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+        activeProfileText = TextView(this).apply {
+            textSize = 16f
+            gravity = Gravity.CENTER
+            setPadding(0, 8, 0, 12)
         }
+        root.addView(activeProfileText, full())
+
+        root.addView(Button(this).apply {
+            text = "👤 پروفایل‌ها"
+            isAllCaps = false
+            setOnClickListener { showProfiles() }
+        }, fullWithMargins())
+
+        root.addView(Button(this).apply {
+            text = "🗂 فایل‌های پروفایل فعال"
+            isAllCaps = false
+            setOnClickListener { showCurrentFiles() }
+        }, fullWithMargins())
+
+        root.addView(Button(this).apply {
+            text = "🗑 حذف پروفایل فعال"
+            isAllCaps = false
+            setOnClickListener { confirmDeleteActiveProfile() }
+        }, fullWithMargins())
+
         val sections = listOf(
             "آزمایش‌ها" to AnalysisEngine.Section.LABS,
             "طب سنتی" to AnalysisEngine.Section.TRADITIONAL,
@@ -83,16 +114,15 @@ class MainActivity : AppCompatActivity() {
             "کف دست" to AnalysisEngine.Section.PALM
         )
         sections.forEach { (label, value) ->
-            sectionRow.addView(Button(this).apply {
+            root.addView(Button(this).apply {
                 text = label
                 isAllCaps = false
                 setOnClickListener { selectSection(value, label) }
             }, fullWithMargins())
         }
-        root.addView(sectionRow, full())
 
         status = TextView(this).apply {
-            text = "بخش آزمایش‌ها فعال است. عکس بگیر یا تصویر/PDF انتخاب کن."
+            text = "بخش آزمایش‌ها فعال است."
             textSize = 15f
             setPadding(0, 22, 0, 18)
         }
@@ -109,6 +139,7 @@ class MainActivity : AppCompatActivity() {
             text = "📷 گرفتن عکس"
             isAllCaps = false
             setOnClickListener {
+                if (!requireActiveProfile()) return@setOnClickListener
                 if (section == AnalysisEngine.Section.TRADITIONAL) runQuestionnaire()
                 else cameraLauncher.launch(null)
             }
@@ -118,6 +149,7 @@ class MainActivity : AppCompatActivity() {
             text = "📁 انتخاب تصویر یا PDF"
             isAllCaps = false
             setOnClickListener {
+                if (!requireActiveProfile()) return@setOnClickListener
                 if (section == AnalysisEngine.Section.TRADITIONAL) runQuestionnaire()
                 else fileLauncher.launch(arrayOf("image/*", "application/pdf"))
             }
@@ -132,7 +164,10 @@ class MainActivity : AppCompatActivity() {
         root.addView(Button(this).apply {
             text = "🤖 تحلیل"
             isAllCaps = false
-            setOnClickListener { analyzeCurrent() }
+            setOnClickListener {
+                if (!requireActiveProfile()) return@setOnClickListener
+                analyzeCurrent()
+            }
         }, fullWithMargins())
 
         root.addView(Button(this).apply {
@@ -160,41 +195,167 @@ class MainActivity : AppCompatActivity() {
         root.addView(result, full())
 
         root.addView(TextView(this).apply {
-            text = "تحلیل‌های آزمایش بر اساس داده و محدوده مرجع گزارش انجام می‌شوند. تفسیرهای عنبیه، زبان و کف دست در بخش سنتی به‌صورت غیرتشخیصی ارائه می‌شوند."
+            text = "تحلیل‌های آزمایش بر اساس داده و محدوده مرجع گزارش انجام می‌شوند. تفسیرهای سنتی به‌صورت غیرتشخیصی ارائه می‌شوند."
             textSize = 12f
         }, full())
 
         return ScrollView(this).apply { addView(root) }
     }
 
-    private fun selectSection(value: AnalysisEngine.Section, label: String) {
-        section = value
+    private fun refreshProfileHeader() {
+        val active = ProfileStore.active(this)
+        activeProfileText.text = if (active == null) {
+            "پروفایل فعال: انتخاب نشده"
+        } else {
+            "پروفایل فعال: ${active.name}"
+        }
+    }
+
+    private fun requireActiveProfile(): Boolean {
+        if (ProfileStore.active(this) != null) return true
+        toast("اول برای شخص موردنظر پروفایل بساز یا انتخاب کن.")
+        showProfiles()
+        return false
+    }
+
+    private fun showProfiles() {
+        val profiles = ProfileStore.list(this)
+        if (profiles.isEmpty()) {
+            showNewProfileDialog()
+            return
+        }
+        val activeId = ProfileStore.active(this)?.id
+        val names = profiles.map { it.name }.toTypedArray()
+        val checked = profiles.indexOfFirst { it.id == activeId }
+
+        AlertDialog.Builder(this)
+            .setTitle("پروفایل‌ها")
+            .setSingleChoiceItems(names, checked) { dialog, which ->
+                ProfileStore.setActive(this, profiles[which].id)
+                refreshProfileHeader()
+                clearCurrentWork()
+                dialog.dismiss()
+            }
+            .setPositiveButton("پروفایل جدید") { _, _ -> showNewProfileDialog() }
+            .setNegativeButton("بستن", null)
+            .show()
+    }
+
+    private fun showNewProfileDialog() {
+        val input = EditText(this).apply {
+            hint = "نام شخص"
+            setPadding(24, 8, 24, 8)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("پروفایل جدید")
+            .setView(input)
+            .setPositiveButton("ساخت") { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isBlank()) {
+                    toast("نام شخص را وارد کن.")
+                } else {
+                    ProfileStore.add(this, name)
+                    refreshProfileHeader()
+                    clearCurrentWork()
+                    toast("پروفایل ساخته شد.")
+                }
+            }
+            .setNegativeButton("لغو", null)
+            .show()
+    }
+
+    private fun confirmDeleteActiveProfile() {
+        val active = ProfileStore.active(this)
+        if (active == null) {
+            toast("پروفایل فعالی وجود ندارد.")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("حذف پروفایل")
+            .setMessage("پروفایل «${active.name}» و همه عکس‌ها، فایل‌ها و نتایج آن حذف شوند؟")
+            .setPositiveButton("حذف کامل") { _, _ ->
+                ProfileStore.deleteProfile(this, active.id)
+                refreshProfileHeader()
+                clearCurrentWork()
+                toast("پروفایل حذف شد.")
+            }
+            .setNegativeButton("لغو", null)
+            .show()
+    }
+
+    private fun showCurrentFiles() {
+        val active = ProfileStore.active(this)
+        if (active == null) {
+            toast("پروفایل فعالی وجود ندارد.")
+            return
+        }
+        val files = ProfileStore.files(this, active.id)
+        if (files.isEmpty()) {
+            toast("این پروفایل هنوز فایلی ندارد.")
+            return
+        }
+        val labels = files.map { displayFileName(it) }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("فایل‌های ${active.name}")
+            .setItems(labels) { _, which ->
+                confirmDeleteFile(files[which])
+            }
+            .setNegativeButton("بستن", null)
+            .show()
+    }
+
+    private fun confirmDeleteFile(file: File) {
+        AlertDialog.Builder(this)
+            .setTitle("حذف فایل")
+            .setMessage("«${displayFileName(file)}» حذف شود؟")
+            .setPositiveButton("حذف") { _, _ ->
+                if (ProfileStore.deleteFile(file)) toast("فایل حذف شد.")
+                else toast("حذف فایل انجام نشد.")
+            }
+            .setNegativeButton("لغو", null)
+            .show()
+    }
+
+    private fun displayFileName(file: File): String =
+        file.name.replace("_", " ")
+
+    private fun clearCurrentWork() {
         lastBitmap = null
         lastText = ""
         preview.setImageDrawable(null)
         preview.visibility = View.GONE
         result.text = "نتیجه اینجا نمایش داده می‌شود."
+    }
+
+    private fun selectSection(value: AnalysisEngine.Section, label: String) {
+        section = value
+        clearCurrentWork()
         status.text = when (value) {
-            AnalysisEngine.Section.TRADITIONAL -> "بخش $label فعال است. «گرفتن عکس» یا «انتخاب فایل» را بزن تا پرسشنامه باز شود."
-            AnalysisEngine.Section.LABS -> "بخش $label فعال است. تصویر یا PDF گزارش آزمایش را وارد کن."
-            else -> "بخش $label فعال است. عکس واضح بگیر یا تصویر انتخاب کن."
+            AnalysisEngine.Section.TRADITIONAL -> "بخش ${label} فعال است."
+            AnalysisEngine.Section.LABS -> "بخش ${label} فعال است. تصویر یا PDF گزارش آزمایش را وارد کن."
+            else -> "بخش ${label} فعال است. عکس واضح بگیر یا تصویر انتخاب کن."
         }
     }
 
     private fun handleFile(uri: Uri) {
+        val active = ProfileStore.active(this) ?: run {
+            toast("اول یک پروفایل انتخاب کن.")
+            return
+        }
         val mime = contentResolver.getType(uri).orEmpty()
         if (section != AnalysisEngine.Section.LABS && mime == "application/pdf") {
-            toast("برای عنبیه، زبان و کف دست تصویر انتخاب کن؛ PDF مخصوص آزمایش‌هاست.")
+            toast("برای عنبیه، زبان و کف دست تصویر انتخاب کن.")
             return
         }
         lifecycleScope.launch {
             try {
                 status.text = "در حال خواندن فایل..."
+                ProfileStore.copyUri(this@MainActivity, active.id, uri, sectionPrefix() + "_file")
                 if (section == AnalysisEngine.Section.LABS) {
                     lastText = OcrEngine.extractFromUri(this@MainActivity, uri)
                     lastBitmap = null
                     preview.visibility = View.GONE
-                    status.text = "OCR تمام شد. «تحلیل» را بزن."
+                    status.text = "فایل در پروفایل ذخیره شد؛ OCR تمام شد."
                     result.text = lastText.take(5000)
                 } else {
                     val bmp = contentResolver.openInputStream(uri).use { BitmapFactory.decodeStream(it) }
@@ -202,7 +363,7 @@ class MainActivity : AppCompatActivity() {
                     lastText = ""
                     preview.setImageBitmap(lastBitmap)
                     preview.visibility = View.VISIBLE
-                    status.text = "تصویر آماده تحلیل است."
+                    status.text = "تصویر در پروفایل ذخیره شد و آماده تحلیل است."
                 }
             } catch (e: Exception) {
                 status.text = "خطا در خواندن فایل"
@@ -220,6 +381,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun analyzeLabs() {
+        val active = ProfileStore.active(this) ?: return
         lifecycleScope.launch {
             try {
                 status.text = "در حال تحلیل آزمایش..."
@@ -234,17 +396,19 @@ class MainActivity : AppCompatActivity() {
                 val local = AnalysisEngine.localLabSummary(lastText)
                 val cfg = AiClient.loadConfig(this@MainActivity)
                 val hasAi = cfg.gatewayUrl.isNotBlank() || cfg.geminiKey.isNotBlank() || cfg.mistralKey.isNotBlank()
-                if (!hasAi) {
-                    result.text = local
-                    status.text = "تحلیل محلی تمام شد. برای تحلیل AI، تنظیمات AI را وارد کن."
+                val finalText = if (!hasAi) {
+                    status.text = "تحلیل محلی تمام شد."
+                    local
                 } else {
                     val ai = AiClient.analyzeText(
                         this@MainActivity,
                         AnalysisEngine.promptFor(AnalysisEngine.Section.LABS, lastText)
                     )
-                    result.text = local + "\n\n=== تحلیل AI ===\n" + ai
                     status.text = "تحلیل کامل شد."
+                    local + "\n\n=== تحلیل AI ===\n" + ai
                 }
+                result.text = finalText
+                ProfileStore.saveResult(this@MainActivity, active.id, "labs_result", finalText)
             } catch (e: Exception) {
                 status.text = "تحلیل با خطا مواجه شد."
                 result.text = (result.text.toString() + "\n\n" + (e.message ?: "خطای ناشناخته")).trim()
@@ -253,6 +417,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun analyzeImageSection() {
+        val active = ProfileStore.active(this) ?: return
         val bitmap = lastBitmap
         if (bitmap == null) {
             toast("اول یک عکس بگیر یا تصویر انتخاب کن.")
@@ -262,7 +427,9 @@ class MainActivity : AppCompatActivity() {
             try {
                 status.text = "در حال تحلیل تصویر..."
                 val prompt = AnalysisEngine.promptFor(section)
-                result.text = AiClient.analyzeImage(this@MainActivity, prompt, bitmap)
+                val finalText = AiClient.analyzeImage(this@MainActivity, prompt, bitmap)
+                result.text = finalText
+                ProfileStore.saveResult(this@MainActivity, active.id, sectionPrefix() + "_result", finalText)
                 status.text = "تحلیل تصویر کامل شد."
             } catch (e: Exception) {
                 status.text = "تحلیل تصویر انجام نشد."
@@ -272,6 +439,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runQuestionnaire() {
+        val active = ProfileStore.active(this)
+        if (active == null) {
+            toast("اول یک پروفایل انتخاب کن.")
+            return
+        }
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(22, 12, 22, 12)
@@ -290,6 +462,7 @@ class MainActivity : AppCompatActivity() {
                 val answers = checks.map { it.isChecked }
                 val local = TraditionalQuestionnaire.summarize(answers)
                 result.text = local
+                ProfileStore.saveResult(this, active.id, "traditional_result", local)
                 status.text = "پرسشنامه تکمیل شد."
                 val cfg = AiClient.loadConfig(this)
                 val hasAi = cfg.gatewayUrl.isNotBlank() || cfg.geminiKey.isNotBlank() || cfg.mistralKey.isNotBlank()
@@ -301,7 +474,9 @@ class MainActivity : AppCompatActivity() {
                                 this@MainActivity,
                                 AnalysisEngine.promptFor(AnalysisEngine.Section.TRADITIONAL, text)
                             )
-                            result.text = local + "\n\n=== تحلیل AI ===\n" + ai
+                            val finalText = local + "\n\n=== تحلیل AI ===\n" + ai
+                            result.text = finalText
+                            ProfileStore.saveResult(this@MainActivity, active.id, "traditional_ai_result", finalText)
                         } catch (e: Exception) {
                             result.text = local + "\n\nAI: " + (e.message ?: "خطا")
                         }
@@ -314,11 +489,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showPhotoGuide() {
         val text = when (section) {
-            AnalysisEngine.Section.LABS -> "صفحه آزمایش را صاف، بدون سایه و بازتاب نور بگیر. متن و محدوده‌های مرجع باید کاملاً خوانا باشند. برای چند صفحه، PDF بهتر است."
-            AnalysisEngine.Section.IRIDOLOGY -> "در نور یکنواخت عکس نزدیک و واضح از عنبیه بگیر. فوکوس روی خود عنبیه باشد، بازتاب فلش کم باشد و هر چشم جداگانه عکس‌برداری شود."
-            AnalysisEngine.Section.TONGUE -> "نور طبیعی یا سفید یکنواخت، بدون فیلتر رنگی. زبان را کامل و بدون فشار بیرون بیاور و دوربین روبه‌رو باشد."
-            AnalysisEngine.Section.PALM -> "کل کف دست و انگشتان داخل کادر، نور یکنواخت، فوکوس واضح و بدون فیلتر یا سایه شدید."
-            AnalysisEngine.Section.TRADITIONAL -> "این بخش تصویری نیست؛ پرسشنامه را بر اساس وضعیت معمول خودت پاسخ بده."
+            AnalysisEngine.Section.LABS -> "صفحه آزمایش را صاف، بدون سایه و بازتاب نور بگیر. متن و محدوده‌های مرجع باید کاملاً خوانا باشند."
+            AnalysisEngine.Section.IRIDOLOGY -> "در نور یکنواخت عکس نزدیک و واضح از عنبیه بگیر. فوکوس روی خود عنبیه باشد و هر چشم جداگانه عکس‌برداری شود."
+            AnalysisEngine.Section.TONGUE -> "نور طبیعی یا سفید یکنواخت، بدون فیلتر رنگی. زبان را کامل و دوربین را روبه‌رو نگه دار."
+            AnalysisEngine.Section.PALM -> "کل کف دست و انگشتان داخل کادر، نور یکنواخت و فوکوس واضح باشد."
+            AnalysisEngine.Section.TRADITIONAL -> "این بخش تصویری نیست؛ پرسشنامه را بر اساس وضعیت معمول پاسخ بده."
         }
         AlertDialog.Builder(this)
             .setTitle("راهنمای ورودی صحیح")
@@ -368,6 +543,14 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("لغو", null)
             .show()
+    }
+
+    private fun sectionPrefix(): String = when (section) {
+        AnalysisEngine.Section.LABS -> "labs"
+        AnalysisEngine.Section.TRADITIONAL -> "traditional"
+        AnalysisEngine.Section.IRIDOLOGY -> "iridology"
+        AnalysisEngine.Section.TONGUE -> "tongue"
+        AnalysisEngine.Section.PALM -> "palm"
     }
 
     private fun full() = LinearLayout.LayoutParams(
