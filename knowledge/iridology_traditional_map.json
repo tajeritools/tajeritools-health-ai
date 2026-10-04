@@ -1,0 +1,29 @@
+{
+  "module":"iridology_traditional_map",
+  "version":2,
+  "purpose":"catalog_historical_traditional_claims_for_app_display",
+  "evidence_status":"not_validated_for_medical_diagnosis",
+  "iris_features":[
+    {"id":"crypts","fa":"کریپت‌ها/فرورفتگی‌ها","traditional_claims":["ضعف بافتی موضعی در نقشه‌های سنتی"],"evidence":"unsupported"},
+    {"id":"pigment_spots","fa":"لکه‌های رنگدانه‌ای","traditional_claims":["رسوب/سموم یا فشار اندامی در برخی مکاتب"],"evidence":"unsupported"},
+    {"id":"contraction_furrows","fa":"شیارهای انقباضی","traditional_claims":["تنش عصبی یا اسپاسم در برخی مکاتب"],"evidence":"unsupported"},
+    {"id":"collarette_variation","fa":"تغییرات collarette","traditional_claims":["ناحیه گوارش/خودکار در بعضی نقشه‌ها"],"evidence":"unsupported"},
+    {"id":"pupil_shape","fa":"شکل مردمک","traditional_claims":["تعبیرهای سنتی متعدد"],"medical_note":"نامتقارنی یا تغییر جدید مردمک نیازمند ارزیابی پزشکی است","evidence":"medical_observation_not_iridology"},
+    {"id":"iris_nevus_or_visible_lesion","fa":"خال یا ضایعه قابل مشاهده","traditional_claims":[],"medical_note":"ضایعه جدید یا در حال تغییر باید توسط چشم‌پزشک بررسی شود","evidence":"medical_observation"}
+  ],
+  "clock_map_note_fa":"نقشه‌های iridology بین مکاتب یکسان نیستند. برنامه باید هر نگاشت ساعت↔اندام را با نام مکتب/منبع نشان دهد و آن را تشخیص پزشکی تلقی نکند.",
+  "traditional_body_system_catalog":[
+    "مغز و سر","سینوس‌ها","تیروئید","ریه","قلب","کبد","کیسه صفرا","معده","روده باریک","روده بزرگ","پانکراس","طحال","کلیه","مثانه","ستون فقرات","اندام‌های تولیدمثل","لنف","پوست"
+  ],
+  "capture_standard":{
+    "frontal":true,
+    "white_light":true,
+    "no_filter":true,
+    "one_eye_per_image":true,
+    "reject":["blur","severe_glare","oblique_angle","occlusion","beauty_filter"]
+  },
+  "sources":[
+    {"title":"Iridology: A systematic review","url":"https://pubmed.ncbi.nlm.nih.gov/10213874/","finding":"diagnostic validity not supported"},
+    {"title":"Iridology: biological plausibility, clinical evidence, and implications for ophthalmic practice","url":"https://pubmed.ncbi.nlm.nih.gov/42347992/","finding":"2026 review reports lack of diagnostic accuracy, reproducibility and pathophysiologic rationale"}
+  ]
+}
